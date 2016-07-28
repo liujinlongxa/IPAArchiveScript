@@ -1,15 +1,10 @@
 #!/usr/bin/env bash
 
 startbuild() {
-    ipa build -w "${buildProjectDir}MyApp.xcworkspace" --clean -d ${buildDir} -s ${buildScheme} --ipa "iosApp_${buildIpaName}.ipa" -c ${buildEnv} --verbose
+    ipa build -w "${buildProjectDir}lazyaudio.xcworkspace" --clean -d ${buildDir} -s ${buildScheme} --ipa "${buildIpaName}.ipa" -c ${buildEnv} --verbose
     rm /Users/liujinlong/Desktop/*.ipa
-    cp "${buildDir}/iosApp_${buildIpaName}.ipa" /Users/liujinlong/Desktop
-}
-
-startuploadFTP() {
-    ipa distribute:ftp --host ${ftpHost} -port ${ftpPort} -f ${ftpIpaPath} -u ${ftpUsername} -p ${ftpPassword} --path ${ftpPath} --mkdir
-    echo '========= FTP UPLOAD PATH ============='
-    echo "ftp://${ftpHost}${ftpPath}"
+    cp "${buildDir}/${buildIpaName}.ipa" /Users/liujinlong/Desktop
+    echo '============== PACKAGE FINISH ============'
 }
 
 failed() {
@@ -17,12 +12,28 @@ failed() {
     exit 1
 }
 
+# 指定编译版本目录名
+echo -n '指定编译版本目录名(eg:226):'
+read buildVersionDir
+if [ -z ${buildVersionDir} ]
+then
+    failed 编译版本目录名不能为空
+fi
+
 # 指定编译版本
 echo -n '指定编译版本(eg:v2.2.6):'
 read buildVersion
 if [ -z ${buildVersion} ]
 then
     failed 编译版本不能为空
+fi
+
+# 指定编译环境目录名
+echo -n '指定编译环境目录名(25/78/Release,默认25):'
+read buildEnvDir
+if [ -z ${buildEnvDir} ]
+then
+buildEnvDir=25
 fi
 
 # 指定编译环境
@@ -36,54 +47,71 @@ then
     failed 编译环境错误
 fi
 
-# 指定编译序号
-echo -n '请输入build number:'
-read buildNum
-if [ -z ${buildNum} ]
-then
-    failed 编译序号不能为空
-fi
-
 # 是否需要上传到ftp
 echo -n '是否需要上传到ftp(Y/N,默认为Y):'
 read uploadFTP
-if [ -z ${buildNum} ]
+if [ -z ${uploadFTP} ]
 then
     uploadFTP=y
 fi
 
-buildDay=$(date +%m%d)
-buildIpaName="${buildDay}_build${buildNum}"
-buildDir="/Users/liujinlong/Desktop/${buildVersion}/${buildIpaName}"
-buildScheme=MyApp
-buildProjectDir="/Users/liujinlong/Documents/MyApp/"
+buildDay=$(date +"%Y%m%d_%H%M%S")
+buildIpaName="appname_v${buildVersionDir}_e${buildEnvDir}_${buildDay}"
+buildDir="/Users/liujinlong/Desktop/工作文档/打包/${buildVersion}/${buildEnvDir}/${buildIpaName}"
+buildScheme=lazyaudio
+buildProjectDir="/Users/liujinlong/Documents/Work/Code/lazy-client-ios/iphone2_0/"
 
-if [ -e "${buildDir}/iosApp_${buildIpaName}.ipa" ]
+if [ -e "${buildDir}/${buildIpaName}.ipa" ]
 then
     failed 文件已存在，请重新设置build number
 fi
 
 echo "========== Build And Archive Path =========="
-echo "${buildDir}/iosApp_${buildIpaName}.ipa"
+echo "${buildDir}/${buildIpaName}.ipa"
 echo -n '是否确认继续(Y/N)'
 
 read iscontinue
 
-if [ ${iscontinue}=='y' -o ${iscontinue}=='Y' ]
+if [ "${iscontinue}" = "y" -o "${iscontinue}" = "Y" ]
 then
     startbuild
+else
+    exit 0
 fi
 
-ftpHost="192.169.2.189"
-ftpIpaPath="/Users/liujinlong/Desktop/iosApp_${buildIpaName}.ipa"
-ftpUsername="127.0.0.1"
-ftpPassword="123456"
-ftpPort=8080
-ftpPath="/IOSTeam/package/${buildIpaName}/"
-
-if [ ${uploadFTP} == 'y' -o ${uploadFTP} == 'Y' ]
+if [[ ! -e "${buildDir}/${buildIpaName}.ipa" ]]
 then
-    startuploadFTP
+    echo 打包失败
+    exit 0
 fi
 
-echo 'END'
+ftpHost="192.168.2.123"
+ftpIpaPath="/Users/liujinlong/Desktop/${buildIpaName}.ipa"
+ftpIpaPath=${buildDir}
+ftpUsername="iosteam"
+ftpPassword="123456"
+ftpPort="21"
+ftpPath="/package/${buildVersion}/${buildEnvDir}/${buildIpaName}/"
+
+if [ ${uploadFTP} = "y" -o ${uploadFTP} = "Y" ]
+then
+ftp -i -n -V <<!
+open 192.168.2.123
+user iosteam 123456
+binary
+hash
+mkdir ${ftpPath}
+cd ${ftpPath}
+lcd ${ftpIpaPath}
+prompt
+mput *
+close
+bye
+!
+else
+    exit 0
+fi
+
+echo "IPA路径: ${ftpIpaPath}"
+echo "上传路径: ftp://192.168.2.123/IOSTeam${ftpPath}"
+echo "END"
