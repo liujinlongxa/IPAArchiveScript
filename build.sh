@@ -2,8 +2,8 @@
 
 startbuild() {
     ipa build -w "${buildProjectDir}lazyaudio.xcworkspace" --clean -d ${buildDir} -s ${buildScheme} --ipa "${buildIpaName}.ipa" -c ${buildEnv} --verbose
-    rm /Users/liujinlong/Desktop/*.ipa
-    cp "${buildDir}/${buildIpaName}.ipa" /Users/liujinlong/Desktop
+    rm /Users/username/Desktop/*.ipa
+    cp "${buildDir}/${buildIpaName}.ipa" /Users/username/Desktop
     echo '============== PACKAGE FINISH ============'
 }
 
@@ -57,9 +57,9 @@ fi
 
 buildDay=$(date +"%Y%m%d_%H%M%S")
 buildIpaName="appname_v${buildVersionDir}_e${buildEnvDir}_${buildDay}"
-buildDir="/Users/liujinlong/Desktop/工作文档/打包/${buildVersion}/${buildEnvDir}/${buildIpaName}"
+buildDir="/Users/username/Desktop/工作文档/打包/${buildVersion}/${buildEnvDir}/${buildIpaName}"
 buildScheme=lazyaudio
-buildProjectDir="/Users/liujinlong/Documents/Work/Code/lazy-client-ios/iphone2_0/"
+buildProjectDir="/Users/username/Documents/Work/Code/lazy-client-ios/iphone2_0/"
 
 if [ -e "${buildDir}/${buildIpaName}.ipa" ]
 then
@@ -86,7 +86,7 @@ then
 fi
 
 ftpHost="192.168.2.123"
-ftpIpaPath="/Users/liujinlong/Desktop/${buildIpaName}.ipa"
+ftpIpaPath="/Users/username/Desktop/${buildIpaName}.ipa"
 ftpIpaPath=${buildDir}
 ftpUsername="iosteam"
 ftpPassword="123456"
